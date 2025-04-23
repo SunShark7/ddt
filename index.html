@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>引入其他 HTML 文件</title>
+</head>
+
+<body>
+    <h1>主页面</h1>
+    <p>以下是动态加载的两个 HTML 文件：</p>
+    <div id="content1"></div>
+    <div id="content2"></div>
+
+    <script>
+        // 加载第一个 HTML 文件
+        fetch('ctrip.html')
+          .then(response => response.text())
+          .then(data => {
+                document.getElementById('content1').innerHTML = data;
+            });
+
+        // 加载第二个 HTML 文件
+        fetch('booking.html')
+          .then(response => response.text())
+          .then(data => {
+                document.getElementById('content2').innerHTML = data;
+            });
+    </script>
+</body>
+
+</html>
