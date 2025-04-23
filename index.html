@@ -7,14 +7,14 @@
     <title>ddt</title>
     <style>
         /* 菜单栏容器样式 */
-        .menu {
+       .menu {
             display: flex;
             gap: 10px;
             margin-bottom: 20px;
         }
 
         /* 菜单按钮样式 */
-        .menu button {
+       .menu button {
             padding: 5px 10px;
             border: none;
             background-color: #eee;
@@ -23,17 +23,17 @@
         }
 
         /* 菜单按钮悬停样式 */
-        .menu button:hover {
+       .menu button:hover {
             background-color: #ddd;
         }
 
         /* 被点击按钮的样式 */
-        .menu button.active {
+       .menu button.active {
             background-color: #ccc;
         }
 
         /* 显示区域样式 */
-        .content {
+       .content {
             font-size: 18px;
             display: none;
         }
@@ -53,48 +53,52 @@
     <div id="content3" class="content"></div>
 
     <script>
-        const ctripBtn = document.getElementById('ctripBtn');
-        const bookingBtn = document.getElementById('bookingBtn');
-        const agodaBtn = document.getElementById('agodaBtn');
-        const content1 = document.getElementById('content1');
-        const content2 = document.getElementById('content2');
-        const content3 = document.getElementById('content3');
-        const buttons = [ctripBtn, bookingBtn, agodaBtn];
-        const contents = [content1, content2, content3];
+        document.addEventListener('DOMContentLoaded', function () {
+            const ctripBtn = document.getElementById('ctripBtn');
+            const bookingBtn = document.getElementById('bookingBtn');
+            <!-- const agodaBtn = document.getElementById('agodaBtn'); -->
+			
+            const content1 = document.getElementById('content1');
+            const content2 = document.getElementById('content2');
+            const content3 = document.getElementById('content3');
+            <!-- const buttons = [ctripBtn, bookingBtn, agodaBtn]; -->
+			const buttons = [ctripBtn, bookingBtn];
+            const contents = [content1, content2, content3];
 
-        buttons.forEach((button, index) => {
-            button.addEventListener('click', function () {
-                // 移除所有按钮的 active 类
-                buttons.forEach(btn => btn.classList.remove('active'));
-                // 为当前点击的按钮添加 active 类
-                this.classList.add('active');
-                // 隐藏所有内容区域
-                contents.forEach(content => content.style.display = 'none');
-                // 显示对应内容区域
-                contents[index].style.display = 'block';
+            buttons.forEach((button, index) => {
+                button.addEventListener('click', function () {
+                    // 移除所有按钮的 active 类
+                    buttons.forEach(btn => btn.classList.remove('active'));
+                    // 为当前点击的按钮添加 active 类
+                    this.classList.add('active');
+                    // 隐藏所有内容区域
+                    contents.forEach(content => content.style.display = 'none');
+                    // 显示对应内容区域
+                    contents[index].style.display = 'block';
+                });
             });
+
+            // 加载第一个 HTML 文件
+            fetch('ctrip.html')
+              .then(response => response.text())
+              .then(data => {
+                    content1.innerHTML = data;
+                });
+
+            // 加载第二个 HTML 文件
+            fetch('booking.html')
+              .then(response => response.text())
+              .then(data => {
+                    content2.innerHTML = data;
+                });
+
+            // 加载第三个 HTML 文件
+            fetch('agoda.html')
+              .then(response => response.text())
+              .then(data => {
+                    content3.innerHTML = data;
+                });
         });
-
-        // 加载第一个 HTML 文件
-        fetch('ctrip.html')
-          .then(response => response.text())
-          .then(data => {
-                content1.innerHTML = data;
-            });
-
-        // 加载第二个 HTML 文件
-        fetch('booking.html')
-          .then(response => response.text())
-          .then(data => {
-                content2.innerHTML = data;
-            });
-
-        // 加载第三个 HTML 文件
-        fetch('agoda.html')
-          .then(response => response.text())
-          .then(data => {
-                content3.innerHTML = data;
-            });
     </script>
 </body>
 
