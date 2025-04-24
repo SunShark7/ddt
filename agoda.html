@@ -1,0 +1,186 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Agoda</title>
+    <style>
+        /* 定义提示元素的样式 */
+        #copy-notice {
+            position: fixed;
+            bottom: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            background-color: #333;
+            color: white;
+            padding: 10px 20px;
+            border-radius: 5px;
+            opacity: 0;
+            transition: opacity 0.3s ease;
+        }
+
+        button {
+            margin: 0 5px;
+        }
+    </style>
+</head>
+
+<body>
+    <input type="text" id="additionalInput" style="color:#999EA2;">
+    <p></p>
+    <textarea id="inputText" rows="15" cols="70" placeholder="请输入Agoda内容"></textarea>
+    <button onclick="convertData()">转换</button>
+    <button onclick="copyResult()">复制</button>
+    <button onclick="emptyInput()">清空</button>
+    <div id="result"></div>
+    <div id="copy-notice">复制成功</div>
+    <script>
+        function withoutTrailingZeros(val) {
+            if (val) {
+                return val.replace(/(\.\d*?[1-9])0+$|\.0+$/g, '$1');
+            }
+            return null;
+        }
+
+        function removeLeadingZero(date) {
+            return date.replace(/^0/, '');
+        }
+
+        function mergeDatePrices(arr) {
+            if (arr.length === 0) return [];
+
+            let result = [];
+            let startDate = null;
+            let endDate = null;
+            let currentPrice = null;
+            let allPricesSame = true;
+            let firstPrice;
+
+            for (let i = 0; i < arr.length; i++) {
+                let [day, price] = arr[i].split('日');
+                price = price.replace('元', '');
+
+                if (i === 0) {
+                    firstPrice = price;
+                } else if (price!== firstPrice) {
+                    allPricesSame = false;
+                }
+
+                if (currentPrice === null) {
+                    startDate = day;
+                    endDate = day;
+                    currentPrice = price;
+                } else if (price === currentPrice) {
+                    endDate = day;
+                } else {
+                    if (startDate === endDate) {
+                        result.push(`${startDate}日${currentPrice}`);
+                    } else {
+                        result.push(`${startDate}-${endDate}日${currentPrice}`);
+                    }
+                    startDate = day;
+                    endDate = day;
+                    currentPrice = price;
+                }
+            }
+
+            // 处理最后一组数据
+            if (startDate === endDate) {
+                result.push(`${startDate}日${currentPrice}`);
+            } else {
+                result.push(`${startDate}-${endDate}日${currentPrice}`);
+            }
+
+            if (allPricesSame) {
+                return [`每晚${firstPrice}`];
+            }
+
+            return result;
+        }
+
+        function convertData() {
+            const input = document.getElementById('inputText').value;
+            if (input.trim() === '') {
+                alert('请输入内容');
+                return;
+            }
+
+            const referenceSellRate = input.match(/参考售价\(含税及其他费用\)\s+CNY (\d+(\.\d+)?)/)?.[1];
+            const netRate = input.match(/净价\(含税及其他费用\)\s+CNY (\d+(\.\d+)?)/)?.[1];
+            const commission = input.match(/佣金\s+CNY (-?\d+(\.\d+)?)/)?.[1];
+            const commissionRate = (Math.abs(parseFloat(commission)) / parseFloat(referenceSellRate)).toFixed(2);
+
+            const checkIn = input.match(/Check-in 入住.*?\((\d{2})-(\d{2})-(\d{4})\)/)?.[1];
+            const checkOut = input.match(/Check-out 退房.*?\((\d{2})-(\d{2})-(\d{4})\)/)?.[1];
+
+            const nightlyRateMatches = input.matchAll(/(\w+ \d{1,2}, \d{4})\s+CNY (\d+(\.\d+)?)/g);
+            const nightlyNetRates = [];
+            for (const match of nightlyRateMatches) {
+                nightlyNetRates.push(parseFloat(match[2]));
+            }
+
+            const nightlyGrossRates = nightlyNetRates.map(rate => {
+                return (rate / (1 - commissionRate)).toFixed(1);
+            });
+
+            const totalNights = nightlyGrossRates.length;
+
+            let rateDisplay = [];
+            <!-- if (totalNights > 1) { -->
+                <!-- rateDisplay.push(`${checkIn}-${parseInt(checkOut) - 1}日${nightlyGrossRates.slice(0, -1).reduce((acc, val) => parseFloat(acc) + parseFloat(val), 0).toFixed(1)}`); -->
+                <!-- rateDisplay.push(`${checkOut}日${nightlyGrossRates[nightlyGrossRates.length - 1]}`); -->
+            <!-- } else { -->
+                <!-- rateDisplay.push(`${checkIn}日${nightlyGrossRates[0]}`); -->
+            <!-- } -->
+			
+			if (totalNights > 1) {
+                rateDisplay.push(`${checkIn}-${parseInt(checkOut) - 1}日${nightlyGrossRates.slice(0, -1).reduce((acc, val) => parseFloat(acc) + parseFloat(val), 0).toFixed(1)}`);
+                rateDisplay.push(`${checkOut}日${nightlyGrossRates[nightlyGrossRates.length - 1]}`);
+            } else {
+                rateDisplay.push(`${checkIn}日${nightlyGrossRates[0]}`);
+            }
+
+            const rateDisplayStr = rateDisplay.join('，');
+
+            let result = `，预付${withoutTrailingZeros(referenceSellRate)}（${rateDisplayStr}），底价${withoutTrailingZeros(netRate)}，佣金${withoutTrailingZeros(commissionRate)}，${checkIn}入${checkOut}退，共${totalNights}晚`;
+            const additionalText = document.getElementById('additionalInput').value;
+            if (additionalText) {
+                result += `，${additionalText}`;
+            }
+            exeResult(result);
+        }
+
+        function copyResult() {
+            const resultElement = document.getElementById('result');
+            const resultText = resultElement.textContent || resultElement.innerText;
+            if (resultText.trim() === '') {
+                alert('无内容');
+                return;
+            }
+            const tempInput = document.createElement('textarea');
+            tempInput.value = resultText;
+            document.body.appendChild(tempInput);
+            tempInput.select();
+            document.execCommand('copy');
+            document.body.removeChild(tempInput);
+
+            const notice = document.getElementById('copy-notice');
+            notice.style.opacity = '1';
+            setTimeout(() => {
+                notice.style.opacity = '0';
+            }, 2000);
+        }
+
+        function emptyInput() {
+            document.getElementById('inputText').value = '';
+            exeResult('');
+        }
+
+        function exeResult(v) {
+            document.getElementById('result').innerHTML = `<p>${v}</p>`;
+        }
+    </script>
+</body>
+
+</html>    
