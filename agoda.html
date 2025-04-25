@@ -48,6 +48,7 @@
         }
 
         function mergeDatePrices(arr) {
+		console.log(0)
             if (arr.length === 0) return [];
 
             let result = [];
@@ -115,36 +116,28 @@
             const checkOut = input.match(/Check-out 退房.*?\((\d{2})-(\d{2})-(\d{4})\)/)?.[1];
 
             const nightlyRateMatches = input.matchAll(/(\w+ \d{1,2}, \d{4})\s+CNY (\d+(\.\d+)?)/g);
-            const nightlyNetRates = [];
+            const nightlyGrossRates = [];
+			const accNights = [];
             for (const match of nightlyRateMatches) {
-                nightlyNetRates.push(parseFloat(match[2]));
+				const day = match[1].match(/\d+/);
+				const price = (parseFloat(match[2]) / (1 - commissionRate)).toFixed(1);
+				nightlyGrossRates.push(`${day}日${price}元`)
+				
             }
-
-            const nightlyGrossRates = nightlyNetRates.map(rate => {
-                return (rate / (1 - commissionRate)).toFixed(1);
-            });
 
             const totalNights = nightlyGrossRates.length;
-
-            let rateDisplay = [];
-            <!-- if (totalNights > 1) { -->
-                <!-- rateDisplay.push(`${checkIn}-${parseInt(checkOut) - 1}日${nightlyGrossRates.slice(0, -1).reduce((acc, val) => parseFloat(acc) + parseFloat(val), 0).toFixed(1)}`); -->
-                <!-- rateDisplay.push(`${checkOut}日${nightlyGrossRates[nightlyGrossRates.length - 1]}`); -->
-            <!-- } else { -->
-                <!-- rateDisplay.push(`${checkIn}日${nightlyGrossRates[0]}`); -->
-            <!-- } -->
-			
-			if (totalNights > 1) {
-                rateDisplay.push(`${checkIn}-${parseInt(checkOut) - 1}日${nightlyGrossRates.slice(0, -1).reduce((acc, val) => parseFloat(acc) + parseFloat(val), 0).toFixed(1)}`);
-                rateDisplay.push(`${checkOut}日${nightlyGrossRates[nightlyGrossRates.length - 1]}`);
-            } else {
-                rateDisplay.push(`${checkIn}日${nightlyGrossRates[0]}`);
-            }
-
+			const rateDisplay = mergeDatePrices(nightlyGrossRates)
             const rateDisplayStr = rateDisplay.join('，');
 
-            let result = `，预付${withoutTrailingZeros(referenceSellRate)}（${rateDisplayStr}），底价${withoutTrailingZeros(netRate)}，佣金${withoutTrailingZeros(commissionRate)}，${checkIn}入${checkOut}退，共${totalNights}晚`;
-            const additionalText = document.getElementById('additionalInput').value;
+            let result = ''
+            
+			if (totalNights === 1) {
+				result = `，预付${withoutTrailingZeros(referenceSellRate)}，底价${withoutTrailingZeros(netRate)}，佣金${withoutTrailingZeros(commissionRate)}，${checkIn}入${checkOut}退，共${totalNights}晚`;
+			} else {
+				result = `，预付${withoutTrailingZeros(referenceSellRate)}（${rateDisplayStr}），底价${withoutTrailingZeros(netRate)}，佣金${withoutTrailingZeros(commissionRate)}，${checkIn}入${checkOut}退，共${totalNights}晚`;
+			}
+			
+			const additionalText = document.getElementById('additionalInput').value;
             if (additionalText) {
                 result += `，${additionalText}`;
             }
@@ -152,6 +145,7 @@
         }
 
         function copyResult() {
+		console.log(10)
             const resultElement = document.getElementById('result');
             const resultText = resultElement.textContent || resultElement.innerText;
             if (resultText.trim() === '') {
