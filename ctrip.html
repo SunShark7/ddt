@@ -64,7 +64,7 @@
 
             if (days === '1') {
                 const commission = (parseFloat(sellingPrice) - parseFloat(estimatedIncome)).toFixed(2);
-                let result = `，预付${withoutTrailingZeros(sellingPrice)}，底价${withoutTrailingZeros(estimatedIncome)}，佣金${commission}，${checkInDay}入${checkOutDay}退，共${days}晚`;
+                let result = `，预付${withoutTrailingZeros(sellingPrice)}，底价${withoutTrailingZeros(estimatedIncome)}，佣金${withoutTrailingZeros(commission)}，${checkInDay}入${checkOutDay}退，共${days}晚`;
                 const additionalText = document.getElementById('additionalInput').value;
 					if (additionalText) {
                         result += `，${additionalText}`;

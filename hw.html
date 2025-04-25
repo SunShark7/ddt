@@ -1,0 +1,187 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>HW</title>
+    <style>
+        /* 定义提示元素的样式 */
+        #copy-notice {
+            position: fixed;
+            bottom: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            background-color: #333;
+            color: white;
+            padding: 10px 20px;
+            border-radius: 5px;
+            opacity: 0;
+            transition: opacity 0.3s ease;
+        }
+
+        button {
+            margin: 0 5px;
+        }
+    </style>
+</head>
+
+<body>
+    <input type="text" id="additionalInput" style="color:#999EA2;">
+    <p></p>
+    <textarea id="inputText" rows="15" cols="70" placeholder="请输入Agoda内容"></textarea>
+    <button onclick="convertData()">转换</button>
+    <button onclick="copyResult()">复制</button>
+    <button onclick="emptyInput()">清空</button>
+    <div id="result"></div>
+    <div id="copy-notice">复制成功</div>
+    <script>
+        function withoutTrailingZeros(val) {
+            if (val) {
+                return val.replace(/(\.\d*?[1-9])0+$|\.0+$/g, '$1');
+            }
+            return null;
+        }
+
+        function removeLeadingZero(date) {
+            return date.replace(/^0/, '');
+        }
+
+        function mergeDatePrices(arr) {
+            if (arr.length === 0) return [];
+
+            let result = [];
+            let startDate = null;
+            let endDate = null;
+            let currentPrice = null;
+            let allPricesSame = true;
+            let firstPrice;
+
+            for (let i = 0; i < arr.length; i++) {
+                let [day, price] = arr[i].split('日');
+                price = price.replace('元', '');
+
+                if (i === 0) {
+                    firstPrice = price;
+                } else if (price!== firstPrice) {
+                    allPricesSame = false;
+                }
+
+                if (currentPrice === null) {
+                    startDate = day;
+                    endDate = day;
+                    currentPrice = price;
+                } else if (price === currentPrice) {
+                    endDate = day;
+                } else {
+                    if (startDate === endDate) {
+                        result.push(`${startDate}日${currentPrice}`);
+                    } else {
+                        result.push(`${startDate}-${endDate}日${currentPrice}`);
+                    }
+                    startDate = day;
+                    endDate = day;
+                    currentPrice = price;
+                }
+            }
+
+            // 处理最后一组数据
+            if (startDate === endDate) {
+                result.push(`${startDate}日${currentPrice}`);
+            } else {
+                result.push(`${startDate}-${endDate}日${currentPrice}`);
+            }
+
+            if (allPricesSame) {
+                return [`每晚${firstPrice}`];
+            }
+
+            return result;
+        }
+
+        function convertData() {
+            const input = document.getElementById('inputText').value;
+            if (input.trim() === '') {
+                alert('请输入内容');
+                return;
+            }
+
+            const orderNumber = input.match(/Reference\n(\S+)/)?.[1];
+            const totalPrice = input.match(/Total Price incl. Service Charge\s+CNY (\d+(\.\d+)?)/)?.[1];
+            const deposit = input.match(/Deposit \(15%\)\s+CNY (\d+(\.\d+)?)/)?.[1];
+            const balanceDue = input.match(/Balance Due \(on arrival\)\s+CNY (\d+(\.\d+)?)/)?.[1];
+            const commissionRate = '0.15';
+
+			const checkIn = input.match(/Arriving\n(\d+)[a-z]{2}/)?.[1];
+            const checkOutMatch = input.match(/DateRoom TypePersonsBreakfastPrice\n((?:.+\n)+)Free Cancellation/);
+			const nightlyRates = checkOutMatch? checkOutMatch[1].trim().split('\n') : [];
+			//退房日期待优化
+            const checkOut = parseInt(nightlyRates[nightlyRates.length - 1].match(/(\d+)[a-z]{2}/)?.[1]) + 1;
+
+            const nightlyGrossRates = [];
+            for (const rate of nightlyRates) {
+				console.log('rate',rate)
+                const day = rate.match(/(\d+)[a-z]{2}/)?.[1];
+                const price = rate.match(/CNY (\d+(\.\d+)?)/)?.[1];
+				console.log('ptype', typeof price)
+				console.log('type', withoutTrailingZeros(price))
+                nightlyGrossRates.push(`${day}日${withoutTrailingZeros(price)}元`);
+            }
+
+            const totalNights = nightlyGrossRates.length;
+            const rateDisplay = mergeDatePrices(nightlyGrossRates);
+            const rateDisplayStr = rateDisplay.join('，');
+			
+			let result = ''
+			
+			if (totalNights === 1) {
+				result = `HW订单号：${orderNumber}，房费${withoutTrailingZeros(totalPrice)}，HW代收${withoutTrailingZeros(deposit)}，到付${withoutTrailingZeros(balanceDue)}，佣金${commissionRate}，${checkIn}入${checkOut}退，共${totalNights}晚。`;
+			} else {
+				result = `HW订单号：${orderNumber}，房费${withoutTrailingZeros(totalPrice)}（${rateDisplayStr}），HW代收${withoutTrailingZeros(deposit)}，到付${withoutTrailingZeros(balanceDue)}，佣金${commissionRate}，${checkIn}入${checkOut}退，共${totalNights}晚。`;
+			}
+            const additionalInfo = input.match(/(Max Birjak[\s\S]+Source Hostelworld)/)?.[1];
+            if (additionalInfo) {
+                result += additionalInfo;
+            }
+
+            const additionalText = document.getElementById('additionalInput').value;
+            if (additionalText) {
+                result += `，${additionalText}`;
+            }
+            exeResult(result);
+        }
+
+        function copyResult() {
+            const resultElement = document.getElementById('result');
+            const resultText = resultElement.textContent || resultElement.innerText;
+            if (resultText.trim() === '') {
+                alert('无内容');
+                return;
+            }
+            const tempInput = document.createElement('textarea');
+            tempInput.value = resultText;
+            document.body.appendChild(tempInput);
+            tempInput.select();
+            document.execCommand('copy');
+            document.body.removeChild(tempInput);
+
+            const notice = document.getElementById('copy-notice');
+            notice.style.opacity = '1';
+            setTimeout(() => {
+                notice.style.opacity = '0';
+            }, 2000);
+        }
+
+        function emptyInput() {
+            document.getElementById('inputText').value = '';
+            exeResult('');
+        }
+
+        function exeResult(v) {
+            document.getElementById('result').innerHTML = `<p>${v}</p>`;
+        }
+    </script>
+</body>
+
+</html>
+    
