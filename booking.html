@@ -105,21 +105,22 @@ function mergeDatePrices(arr) {
                 return;
             }
 
-            const totalPrice = input.match(/总价\n(\d+(\.\d+)?)/)?.[1];
-            const commission = input.match(/佣金：\n(\d+(\.\d+)?)/)?.[1];
-            const checkInDate = input.match(/入住\n(\d{4})年(\d{1,2})月(\d{1,2})日/)?.[0].replace('入住\n', '');
-            const checkOutDate = input.match(/退房\n(\d{4})年(\d{1,2})月(\d{1,2})日/)?.[0].replace('退房\n', '');
-            const days = input.match(/入住天数：\n(\d+)晚/)?.[1];
-            const guestName = input.match(/入住人姓名：\n([\s\S]*?)\s*偏好语言/)?.[1].trim();
-            const language = input.match(/偏好语言\n([\s\S]*?)\s*渠道：/)?.[1].trim();
+            const totalPrice = input.match(/总价\n\n(\d+(\.\d+)?)/)?.[1];
+            const commission = input.match(/佣金：\n\n(\d+(\.\d+)?)/)?.[1];
+            const checkInDate = input.match(/入住\n\n(\d{4})年(\d{1,2})月(\d{1,2})日/)?.[0].replace('入住\n', '');
+            const checkOutDate = input.match(/退房\n\n(\d{4})年(\d{1,2})月(\d{1,2})日/)?.[0].replace('退房\n', '');
+            const days = input.match(/入住天数：\n\n(\d+)晚/)?.[1];
+            const guestName = input.match(/入住人姓名：\n\n([\s\S]*?)\s*偏好语言/)?.[1].trim();
+            const language = input.match(/偏好语言\n\n([\s\S]*?)\s*渠道：/)?.[1].trim();
 
             const checkInDay = removeLeadingZero(checkInDate.split('年')[1].split('月')[1].split('日')[0]);
             const checkOutDay = removeLeadingZero(checkOutDate.split('年')[1].split('月')[1].split('日')[0]);
 
             // 提取每日房价信息
-            const dailyPriceMatches = input.matchAll(/(\d{1,2}) - (\d{1,2}) (\d{1,2})月.*?(\d+(\.\d+)?元)/g);
-            const dailyPrices = [];
+			const dailyPriceMatches = input.matchAll(/(\d{1,2})\s+-\s+(\d{1,2})\s+(\d{1,2})月[\s\S]*?(\d+(\.\d+)?元)/g);
+			const dailyPrices = [];
             for (const match of dailyPriceMatches) {
+				<!-- console.log('match',match) -->
                 const day = removeLeadingZero(match[1]);
 				const price = withoutTrailingZeros(match[4]);
 				dailyPrices.push(`${day}日${price}`);
