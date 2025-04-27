@@ -104,8 +104,10 @@ function mergeDatePrices(arr) {
                 alert('请输入内容');
                 return;
             }
-
-            const totalPrice = input.match(/总价\n\n(\d+(\.\d+)?)/)?.[1];
+			
+			const totalPriceMatch = input.match(/总价[\s\n]*(\d{1,3}(?:,\d{3})*(?:\.\d+)?)/);
+			const totalPrice = totalPriceMatch? totalPriceMatch[1] : null;
+            <!-- const totalPrice = input.match(/总价\n\n(\d+(\.\d+)?)/)?.[1]; -->
             const commission = input.match(/佣金：\n\n(\d+(\.\d+)?)/)?.[1];
             const checkInDate = input.match(/入住\n\n(\d{4})年(\d{1,2})月(\d{1,2})日/)?.[0].replace('入住\n', '');
             const checkOutDate = input.match(/退房\n\n(\d{4})年(\d{1,2})月(\d{1,2})日/)?.[0].replace('退房\n', '');
