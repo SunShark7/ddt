@@ -29,7 +29,33 @@
 <body>
     <input type="text" id="additionalInput" style="color:#999EA2;">
     <p></p>
-    <textarea id="inputText" rows="15" cols="70" placeholder="请输入HW内容"></textarea>
+    <textarea id="inputText" rows="15" cols="70" placeholder="请输入HW内容">
+Reference
+99834-569123608
+Jonathan Herskowitz
+ Israel
+yonatan.hers@gmail.com
+ 2 1 Night
+Booked
+26th Apr ′25
+1:28:01
+Arriving
+27th Apr ′25
+15.00
+Source Androidapp
+Manage Booking
+Need to manage your booking?
+View Card Information
+Report Payment Issue
+Cancel Booking
+Room Details
+DateRoom TypePersonsBreakfastPrice
+27th Apr ′25standard double room without balcony Promo 2 0CNY 69.23
+Total Price incl. Service Charge	CNY 138.46
+Deposit (15%)	CNY 20.77
+Balance Due (on arrival)	CNY 117.69
+I have read this booking
+	</textarea>
     <button onclick="convertData()">转换</button>
     <button onclick="copyResult()">复制</button>
     <button onclick="emptyInput()">清空</button>
@@ -113,19 +139,19 @@
             const commissionRate = '0.15';
 
 			const checkIn = input.match(/Arriving\n(\d+)[a-z]{2}/)?.[1];
-            const checkOutMatch = input.match(/DateRoom TypePersonsBreakfastPrice\n((?:.+\n)+)Free Cancellation/);
+            const checkOutMatch = input.match(/DateRoom TypePersonsBreakfastPrice\n((?:.+\n)+)Total Price/);
 			const nightlyRates = checkOutMatch? checkOutMatch[1].trim().split('\n') : [];
+			console.log('nightlyRates',nightlyRates)
 			//退房日期待优化
             const checkOut = parseInt(nightlyRates[nightlyRates.length - 1].match(/(\d+)[a-z]{2}/)?.[1]) + 1;
+			//const checkOutDate = new Date(lastRateYear, lastRateMonth, lastRateDay + 1); 处理日期边界问题
 
             const nightlyGrossRates = [];
             for (const rate of nightlyRates) {
-				console.log('rate',rate)
                 const day = rate.match(/(\d+)[a-z]{2}/)?.[1];
                 const price = rate.match(/CNY (\d+(\.\d+)?)/)?.[1];
-				console.log('ptype', typeof price)
-				console.log('type', withoutTrailingZeros(price))
-                nightlyGrossRates.push(`${day}日${withoutTrailingZeros(price)}元`);
+				const doublePric = parseFloat(price)*2;
+                nightlyGrossRates.push(`${day}日${withoutTrailingZeros(String(doublePric))}元`);
             }
 
             const totalNights = nightlyGrossRates.length;
