@@ -138,7 +138,9 @@
 			
 			result += `，预付，底价${withoutTrailingZeros(netRate)}，佣金，${checkIn}入${checkOut}退，共${totalNights}晚`;
 
-            const additionalText = document.getElementById('additionalInput').value;
+            <!-- const additionalText = document.getElementById('additionalInput').value; -->
+			const additionalText = window.parent.getInputValue();
+			
             if (additionalText) {
                 result += `，${additionalText}`;
             }
