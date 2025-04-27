@@ -26,7 +26,7 @@
 </head>
 
 <body>
-	<input type="text" id="additionalInput" style="color:#999EA2;">
+	<!-- <input type="text" id="additionalInput" style="color:#999EA2;"> -->
 	<p></P>
     <textarea id="inputText" rows="15" cols="70" placeholder="请输入携程内容"></textarea>
     <button onclick="convertData()">转换</button>
@@ -65,7 +65,8 @@
             if (days === '1') {
                 const commission = (parseFloat(sellingPrice) - parseFloat(estimatedIncome)).toFixed(2);
                 let result = `，预付${withoutTrailingZeros(sellingPrice)}，底价${withoutTrailingZeros(estimatedIncome)}，佣金${withoutTrailingZeros(commission)}，${checkInDay}入${checkOutDay}退，共${days}晚`;
-                const additionalText = document.getElementById('additionalInput').value;
+                <!-- const additionalText = document.getElementById('additionalInput').value; -->
+				const additionalText = window.parent.getInputValue();
 					if (additionalText) {
                         result += `，${additionalText}`;
                     }
@@ -89,7 +90,8 @@
 
                 if (allSameSellingPrice && allSameCommission) {
                     let result = `，预付${withoutTrailingZeros(sellingPrice)}（每晚${withoutTrailingZeros(dailySellingPrices[0])}），底价${withoutTrailingZeros(estimatedIncome)}，佣金每晚${withoutTrailingZeros(dailyCommissions[0])}，${checkInDay}入${checkOutDay}退，共${days}晚`;
-                    const additionalText = document.getElementById('additionalInput').value;
+                    <!-- const additionalText = document.getElementById('additionalInput').value; -->
+					const additionalText = window.parent.getInputValue();
 					if (additionalText) {
                         result += `，${additionalText}`;
                     }
@@ -148,7 +150,8 @@
                     const dailyCommissionStr = mergedCommissionDates.join('，');
 
                     let result = `，预付${withoutTrailingZeros(sellingPrice)}（${dailySellingPriceStr}），底价${withoutTrailingZeros(estimatedIncome)}，佣金${dailyCommissionStr}，${checkInDay}入${checkOutDay}退，共${days}晚`;
-                    const additionalText = document.getElementById('additionalInput').value;
+                    <!-- const additionalText = document.getElementById('additionalInput').value; -->
+					const additionalText = window.parent.getInputValue();
 					if (additionalText) {
                         result += `，${additionalText}`;
                     }

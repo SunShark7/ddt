@@ -27,7 +27,7 @@
 </head>
 
 <body>
-    <input type="text" id="additionalInput" style="color:#999EA2;">
+    <!-- <input type="text" id="additionalInput" style="color:#999EA2;"> -->
     <p></p>
     <textarea id="inputText" rows="15" cols="70" placeholder="请输入美团内容"></textarea>
     <button onclick="convertData()">转换</button>
@@ -140,7 +140,6 @@
 
             <!-- const additionalText = document.getElementById('additionalInput').value; -->
 			const additionalText = window.parent.getInputValue();
-			console.log(2,additionalText)
 			
             if (additionalText) {
                 result += `，${additionalText}`;

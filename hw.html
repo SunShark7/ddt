@@ -27,7 +27,7 @@
 </head>
 
 <body>
-    <input type="text" id="additionalInput" style="color:#999EA2;">
+    <!-- <input type="text" id="additionalInput" style="color:#999EA2;"> -->
     <p></p>
     <textarea id="inputText" rows="15" cols="70" placeholder="请输入HW内容"></textarea>
     <button onclick="convertData()">转换</button>
@@ -144,7 +144,8 @@
                 result += additionalInfo;
             }
 
-            const additionalText = document.getElementById('additionalInput').value;
+            <!-- const additionalText = document.getElementById('additionalInput').value; -->
+			const additionalText = window.parent.getInputValue();
             if (additionalText) {
                 result += `，${additionalText}`;
             }

@@ -27,7 +27,7 @@
 </head>
 
 <body>
-    <input type="text" id="additionalInput" style="color:#999EA2;">
+    <!-- <input type="text" id="additionalInput" style="color:#999EA2;"> -->
     <p></p>
     <textarea id="inputText" rows="15" cols="70" placeholder="请输入Agoda内容"></textarea>
     <button onclick="convertData()">转换</button>
@@ -137,7 +137,8 @@
 				result = `，预付${withoutTrailingZeros(referenceSellRate)}（${rateDisplayStr}），底价${withoutTrailingZeros(netRate)}，佣金${withoutTrailingZeros(commissionRate)}，${checkIn}入${checkOut}退，共${totalNights}晚`;
 			}
 			
-			const additionalText = document.getElementById('additionalInput').value;
+			<!-- const additionalText = document.getElementById('additionalInput').value; -->
+			const additionalText = window.parent.getInputValue();
             if (additionalText) {
                 result += `，${additionalText}`;
             }
@@ -145,7 +146,6 @@
         }
 
         function copyResult() {
-		console.log(10)
             const resultElement = document.getElementById('result');
             const resultText = resultElement.textContent || resultElement.innerText;
             if (resultText.trim() === '') {

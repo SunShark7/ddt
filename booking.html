@@ -26,7 +26,7 @@
 </head>
 
 <body>
-    <input type="text" id="additionalInput" style="color:#999EA2;">
+    <!-- <input type="text" id="additionalInput" style="color:#999EA2;"> -->
     <p></p>
     <textarea id="inputText" rows="15" cols="70" placeholder="请输入Booking内容"></textarea>
     <button onclick="convertData()">转换</button>
@@ -132,7 +132,8 @@ function mergeDatePrices(arr) {
 
 
             let result = `，到付${withoutTrailingZeros(totalPrice)}（${dailySellingPriceStr}），佣金0.18，${checkInDay}入${checkOutDay}退，共${days}晚。入住人姓名：\n\n${guestName}\n偏好语言\n\n${language}，其他：`;
-            const additionalText = document.getElementById('additionalInput').value;
+            <!-- const additionalText = document.getElementById('additionalInput').value; -->
+			const additionalText = window.parent.getInputValue();
             if (additionalText) {
                 result += `，${additionalText}`;
             }
