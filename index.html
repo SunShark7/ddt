@@ -52,6 +52,7 @@
         <button id="agodaBtn">Agoda</button>
 		<button id="hwBtn">HW</button>
 		<button id="meituanBtn">美团</button>
+		<button id="tableBtn">其它</button>
     </div>
 	<div>
 		<input type="text" id="additionalInput" style="color:#999EA2;margin-left:10px;">
@@ -71,6 +72,9 @@
 	<div id="content5" class="content">
 	    <iframe src="meituan.html" width="100%" height="600" style="border: none;"></iframe>
 	</div>
+	<div id="content6" class="content">
+	    <iframe src="table.html" width="100%" height="600" style="border: none;"></iframe>
+	</div>
 
     <script>
 		
@@ -85,14 +89,16 @@
             const agodaBtn = document.getElementById('agodaBtn');
 			const hwBtn = document.getElementById('hwBtn');
 			const meituanBtn = document.getElementById('meituanBtn');
+			const tableBtn = document.getElementById('tableBtn');
 			
             const content1 = document.getElementById('content1');
             const content2 = document.getElementById('content2');
             const content3 = document.getElementById('content3');
 			const content4 = document.getElementById('content4');
 			const content5 = document.getElementById('content5');
-            const buttons = [ctripBtn, bookingBtn, agodaBtn, hwBtn, meituanBtn];
-            const contents = [content1, content2, content3, content4, content5];
+			const content6 = document.getElementById('content6');
+            const buttons = [ctripBtn, bookingBtn, agodaBtn, hwBtn, meituanBtn, tableBtn];
+            const contents = [content1, content2, content3, content4, content5, content6];
 
             buttons.forEach((button, index) => {
                 button.addEventListener('click', function () {

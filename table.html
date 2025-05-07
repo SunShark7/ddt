@@ -1,0 +1,133 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <title>房态表格</title>
+    <style>
+      .table-container {
+            position: relative;
+        }
+
+      .table-container table thead th {
+            position: sticky;
+            top: 0;
+            background-color: white;
+            z-index: 1;
+        }
+    </style>
+</head>
+
+<body class="bg-white-100 px-2">
+    <h1 class="text-2xl font-bold mb-4"></h1>
+    <textarea id="dataInput" class="w-full p-2 border border-gray-300 rounded mb-4" rows="10"
+        placeholder="请输入房态内容"></textarea>
+    <button id="convertButton" class="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600">转换</button>
+    <button id="toggleFirstThreeRowsBtn" class="bg-green-500 text-white px-4 py-2 rounded hover:bg-green-600">隐藏</button>
+		
+    <div id="tableContainer" class="table-container mt-4"></div>
+
+    <script>
+        const dataInput = document.getElementById('dataInput');
+        const convertButton = document.getElementById('convertButton');
+        const tableContainer = document.getElementById('tableContainer');
+        const toggleFirstThreeRowsBtn = document.getElementById('toggleFirstThreeRowsBtn');
+
+        convertButton.addEventListener('click', () => {
+            const inputData = dataInput.value;
+            const lines = inputData.split('\n');
+            // 提取第一行数据中的`今天`
+            const firstLine = lines[0].split('\t');
+            const todayIndex = firstLine.indexOf('今天');
+            const todayText = todayIndex!== -1? firstLine[todayIndex] : '';
+
+            // 提取日期数据
+            const dates = [];
+            for (let i = 1; i < lines.length; i++) {
+                const line = lines[i];
+                if (line.includes('-')) {
+                    const date = line.split('\t')[1];
+                    dates.push(date);
+                } else {
+                    break;
+                }
+            }
+            const headers = ['房型', '渠道', todayText, ...dates];
+            const table = document.createElement('table');
+            table.classList.add('table-auto', 'w-full', 'border-collapse', 'border', 'border-gray-300');
+
+            const thead = document.createElement('thead');
+            const headerRow = document.createElement('tr');
+            headers.forEach((header, index) => {
+                const th = document.createElement('th');
+                th.classList.add('border', 'border-gray-300', 'px-4', 'py-2');
+                if (header === '渠道') {
+                    th.style.display = 'none';
+                }
+                th.textContent = header;
+                headerRow.appendChild(th);
+            });
+            thead.appendChild(headerRow);
+            table.appendChild(thead);
+
+            const tbody = document.createElement('tbody');
+            let roomType = '';
+            for (let i = 1; i < lines.length; i++) {
+                const line = lines[i];
+                if (line.includes('小程序')) {
+                    continue;
+                }
+                if (line.trim() &&!line.includes('\t')) {
+                    roomType = line;
+                } else if (line.includes('云掌柜')) {
+                    let rowData = [roomType, ...line.split('\t')];
+                    let subtractValue = 2;
+                    if (roomType === '标准双床房（不带阳台）' || roomType === '阳台双床房') {
+                        subtractValue = 1;
+                    }
+                    for (let j = 2; j < rowData.length; j++) {
+                        let num = parseInt(rowData[j], 10);
+                        if (!isNaN(num)) {
+                            num = Math.max(0, num - subtractValue);
+                            rowData[j] = num.toString();
+                        }
+                    }
+                    const row = document.createElement('tr');
+                    rowData.forEach((data, index) => {
+                        const td = document.createElement('td');
+                        td.classList.add('border', 'border-gray-300', 'px-4', 'py-2');
+                        if (headers[index] === '渠道') {
+                            td.style.display = 'none';
+                        }
+                        td.textContent = data;
+                        row.appendChild(td);
+                    });
+                    tbody.appendChild(row);
+                }
+            }
+            table.appendChild(tbody);
+            tableContainer.innerHTML = '';
+            tableContainer.appendChild(table);
+        });
+
+        toggleFirstThreeRowsBtn.addEventListener('click', function () {
+            const table = tableContainer.querySelector('table');
+            if (table) {
+                const tbody = table.querySelector('tbody');
+                if (tbody) {
+                    const rows = tbody.rows;
+                    for (let i = 0; i < Math.min(3, rows.length); i++) {
+                        rows[i].style.display = rows[i].style.display === 'none'? 'table-row' : 'none';
+                    }
+                    const buttonText = toggleFirstThreeRowsBtn.textContent === '隐藏'? '展示' : '隐藏';
+                    toggleFirstThreeRowsBtn.textContent = buttonText;
+                }
+            }
+        });
+    </script>
+</body>
+
+</html>
+    
