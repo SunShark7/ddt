@@ -1,0 +1,763 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>阳朔旅游地图</title>
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin=""/>
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
+    <style>
+        body, html { margin: 0; padding: 0; height: 100%; overflow: hidden; }
+        #map { width: 100%; height: 100%; }
+        .leaflet-control-container .leaflet-top,
+        .leaflet-control-container .leaflet-bottom { transform: scale(0.85); }
+        .custom-popup .leaflet-popup-content-wrapper {
+            border-radius: 8px;
+            box-shadow: 0 3px 14px rgba(0,0,0,0.4);
+        }
+        .custom-popup .leaflet-popup-content {
+            margin: 12px 16px;
+            min-width: 220px;
+        }
+        .popup-image {
+            width: 100%;
+            height: 120px;
+            object-fit: cover;
+            border-radius: 4px;
+            margin-bottom: 8px;
+        }
+        .popup-title {
+            font-size: 16px;
+            font-weight: bold;
+            margin-bottom: 4px;
+        }
+        .popup-desc {
+            font-size: 14px;
+            color: #666;
+            margin-bottom: 10px;
+        }
+        .popup-btn {
+            display: inline-block;
+            padding: 6px 12px;
+            background-color: #1a73e8;
+            color: #ffffff !important;
+            text-decoration: none;
+            border-radius: 4px;
+            font-size: 14px;
+        }
+        .popup-btn:hover {
+            background-color: #0d47a1;
+        }
+        .sidebar {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            width: 48px;
+            background-color: white;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.2);
+            z-index: 1000;
+        }
+        .sidebar-item {
+            width: 48px;
+            height: 48px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            border-bottom: 1px solid #eee;
+            transition: background-color 0.2s;
+        }
+        .sidebar-item:last-child {
+            border-bottom: none;
+        }
+        .sidebar-item:hover {
+            background-color: #f5f5f5;
+        }
+        .sidebar-item.active {
+            background-color: #e8f0fe;
+            color: #1a73e8;
+        }
+        .sidebar-icon {
+            font-size: 20px;
+        }
+        .sidebar-tooltip {
+            position: absolute;
+            right: 56px;
+            background-color: rgba(0,0,0,0.7);
+            color: white;
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-size: 12px;
+            white-space: nowrap;
+            opacity: 0;
+            transition: opacity 0.2s;
+            pointer-events: none;
+        }
+        .sidebar-item:hover .sidebar-tooltip {
+            opacity: 1;
+        }
+		 #map {
+            width: 100vw;
+            height: calc(100vh - 48px); /* 预留导航栏空间 */
+            max-width: 1414px;           /* 保持与A4图片相同宽度 */
+            max-height: 2000px;          /* 保持与A4图片相同高度 */
+            margin: 24px auto;           /* 电脑端居中 */
+            border: 1px solid #eee;
+        }
+    </style>
+</head>
+<body>
+    <div id="map"></div>
+    
+    <!-- 右侧悬浮导航栏 -->
+    <div class="sidebar">
+        <div class="sidebar-item active" data-route="route1">
+            <i class="sidebar-icon">🚤</i>
+            <div class="sidebar-tooltip">骑行路线</div>
+        </div>
+        <!-- <div class="sidebar-item" data-route="route2">
+            <i class="sidebar-icon">🚴</i>
+            <div class="sidebar-tooltip">骑行路线2</div>
+        </div>
+        <div class="sidebar-item" data-route="route3">
+            <i class="sidebar-icon">🏞️</i>
+            <div class="sidebar-tooltip">徒步路线</div>
+        </div>
+        <div class="sidebar-item" id="clear-routes">
+            <i class="sidebar-icon">❌</i>
+            <div class="sidebar-tooltip">清除线路</div>
+        </div> -->
+    </div>
+
+    <script>
+        const map = L.map('map', {
+            zoomControl: false,
+			maxZoom: 16,        // 最大缩放级别（避免过度拉伸）
+            minZoom: 12,         // 最小缩放级别
+            attributionControl: false,
+            touchZoom: true,
+            doubleClickZoom: true,
+            scrollWheelZoom: true,
+            tap: true
+        }).setView([24.8, 110.385], 13); // 阳朔县中心坐标
+
+        <!-- L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { //https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png -->
+            <!-- maxZoom: 19 -->
+        <!-- }).addTo(map); -->
+		
+		const customMapBounds = [
+			[24.85, 110.35],    // 左下角 [纬度, 经度]
+            [24.75, 110.4207]  // 右上角 [纬度, 经度]
+		];
+		
+
+		L.imageOverlay('map.png', customMapBounds, {
+		opacity: 0.9,
+		interactive: false,
+		attribution: '手绘地图'
+		}).addTo(map);
+
+// 设置地图最大范围
+map.setMaxBounds(customMapBounds);
+
+        function createPopupContent(title, desc, imgUrl, lat, lng) {
+            const gaodeMapUrl = `https://uri.amap.com/marker?position=${lng},${lat}&name=${encodeURIComponent(title)}&src=yourCompanyName|yourAppName`;
+            
+            return `
+                <div class="popup-content">
+                    <img src="${imgUrl}" alt="${title}" class="popup-image">
+                    <div class="popup-title">${title}</div>
+                    <div class="popup-desc">${desc}</div>
+                    <a href="${gaodeMapUrl}" target="_blank" class="popup-btn">查看详情</a>
+                </div>
+            `;
+        }
+
+        // 阳朔景点数据
+        const locations = [
+            { 
+                name: "Sudder Street Guest House", 
+                position: [24.808240,110.391998], //图片坐标点
+				location: [24.794566,110.496111], //实际经纬度
+                description: "东院弥香客栈",
+                image: "./imgs/01.jpg"
+            },
+            { 
+                name: "Gongnong Bridge", 
+                position: [24.776760,110.394040],
+				location: [24.734469,110.491013],
+                description: "工农桥",
+                image: "./imgs/12.png"
+            },
+            { 
+                name: "Big Banyan Tree", 
+                position: [24.777851,110.389010],
+				location: [24.731619,110.486134],
+                description: "大榕树",
+                image: "./imgs/03.png"
+            },
+            { 
+                name: "Moon Hill", 
+                position: [24.774890,110.382042],
+				location: [24.724998,110.472518],
+                description: "月亮山",
+                image: "./imgs/04.jpg"
+            },
+            { 
+                name: "Jima Warft", 
+                position: [24.792150,110.375776],
+				location: [24.757932,110.449705],
+                description: "骥马码头",
+                image: "./imgs/05.jpg"
+            },
+            { 
+                name: "Jiuxian Village", 
+                position: [24.812135,110.367622],
+				location: [24.785466,110.432006],
+                description: "旧县村",
+                image: "./imgs/06.jpg"
+            },
+            { 
+                name: "Jinlong Bridge", 
+                position: [24.827092,110.352859],
+				location: [24.81618,110.393589],
+                description: "金龙桥",
+                image: "./imgs/07.png"
+            },
+            { 
+                name: "Fuli Bridge", 
+                position: [24.833791,110.358353],
+				location: [24.826747,110.388036],
+                description: "富里桥",
+                image: "./imgs/08.jpg"
+            },
+            { 
+                name: "Jima Village", 
+                position: [24.800370,110.380068],
+				location: [24.794566,110.496111],
+                description: "骥马村",
+                image: "./imgs/13.jpg"
+            },
+            { 
+                name: "Impression Liu Sanjie", 
+                position: [24.796475,110.399637],
+				location: [24.766961,110.508034],
+                description: "印象刘三姐",
+                image: "./imgs/02.png"
+            },
+            { 
+                name: "Fuli Ancient Town", 
+                position: [24.796163,110.410109],
+				location: [24.778882,110.556876],
+                description: "福利古镇",
+                image: "./imgs/11.jpg"
+            },
+            { 
+                name: "Liugong Village", 
+                position: [24.781948,110.409508],
+				location: [24.735591,110.584211],
+                description: "留公村",
+				image: "./imgs/11.png"
+			}
+             
+        ];
+
+        const customPopupOptions = {
+            className: 'custom-popup',
+            minWidth: 220
+        };
+
+        // 添加所有标记点
+        locations.forEach(location => {
+            L.marker(location.position)
+                .addTo(map)
+                .bindPopup(
+                    createPopupContent(
+                        location.name, 
+                        location.description, 
+                        location.image,
+                        location.location[0],
+                        location.location[1]
+                    ),
+                    customPopupOptions
+                );
+        });
+
+        // 自定义缩放控件
+        L.control.zoom({
+            position: 'bottomright',
+            zoomInText: '+',
+            zoomInTitle: '放大',
+            zoomOutText: '-',
+            zoomOutTitle: '缩小'
+        }).addTo(map);
+
+        // 简洁比例尺
+        L.control.scale({
+            position: 'bottomleft',
+            metric: true,
+            imperial: false
+        }).addTo(map);
+
+        // 贝塞尔曲线计算函数
+        function bezierCurve(points, segments = 20) {
+            const curvePoints = [];
+            
+            for (let t = 0; t <= 1; t += 1 / segments) {
+                let x = 0;
+                let y = 0;
+                const n = points.length - 1;
+                
+                for (let i = 0; i <= n; i++) {
+                    const coef = combination(n, i) * Math.pow(1 - t, n - i) * Math.pow(t, i);
+                    x += coef * points[i][1]; // lng
+                    y += coef * points[i][0]; // lat
+                }
+                
+                curvePoints.push([y, x]);
+            }
+            
+            return curvePoints;
+        }
+        
+        // 组合数计算
+        function combination(n, k) {
+            if (k === 0 || k === n) return 1;
+            return combination(n - 1, k - 1) + combination(n - 1, k);
+        }
+        
+        // 弧线计算函数（大圆航线）
+        function greatCircle(start, end, steps = 20) {
+            const points = [];
+            const startLat = toRadians(start[0]);
+            const startLng = toRadians(start[1]);
+            const endLat = toRadians(end[0]);
+            const endLng = toRadians(end[1]);
+            const dLng = endLng - startLng;
+            
+            for (let i = 0; i <= steps; i++) {
+                const f = i / steps;
+                const A = Math.sin((1 - f) * dLng) / Math.sin(dLng);
+                const B = Math.sin(f * dLng) / Math.sin(dLng);
+                const x = A * Math.cos(startLat) * Math.cos(startLng) + B * Math.cos(endLat) * Math.cos(endLng);
+                const y = A * Math.cos(startLat) * Math.sin(startLng) + B * Math.cos(endLat) * Math.sin(endLng);
+                const z = A * Math.sin(startLat) + B * Math.sin(endLat);
+                
+                const lat = toDegrees(Math.atan2(z, Math.sqrt(x * x + y * y)));
+                const lng = toDegrees(Math.atan2(y, x));
+                
+                points.push([lat, lng]);
+            }
+            
+            return points;
+        }
+        
+        function toRadians(degrees) {
+            return degrees * Math.PI / 180;
+        }
+        
+        function toDegrees(radians) {
+            return radians * 180 / Math.PI;
+        }
+
+        // 定义阳朔旅游路线
+        const routes = {
+            route1: {
+                color: '#1a73e8',
+                points: [
+                    [24.802240,110.390410], //东院弥香
+                    [24.797643,110.391312], 
+                    [24.796397,110.390410], 
+					[24.796338,110.393050], 
+                    [24.795540,110.393693], 
+                    [24.791468,110.391698], 
+					[24.789189,110.390453], 
+                    [24.783228,110.390539], 
+                    [24.778786,110.393243],
+					[24.778870,110.394725], //TUDO
+                    [24.778338,110.395195],
+					[24.777169,110.394702],
+                    [24.777150,110.392084], 
+                    [24.771753,110.387578],
+					[24.771597,110.386055],
+					[24.771753,110.387578],
+					[24.777150,110.392084],
+					[24.777754,110.391827],
+					[24.777792,110.390711],
+					[24.778572,110.390067],
+					[24.779702,110.389810],
+					[24.780130,110.388458],
+					[24.780890,110.387578],
+					[24.782760,110.387406],
+					[24.783481,110.386612],
+					[24.783442,110.385540],
+					[24.785605,110.383093],
+					[24.787163,110.381613],
+					[24.789520,110.379746],
+					[24.791683,110.378351], //骥马码头
+					[24.793962,110.376999],
+					[24.794176,110.375605],
+					[24.796085,110.375304],
+					[24.796864,110.374017],
+					[24.797643,110.373244],
+					[24.799007,110.372901],
+					[24.799513,110.371270],
+					[24.800526,110.370798],
+					[24.803292,110.368137],
+					[24.806720,110.365949],
+					[24.808279,110.365176], //旧县村
+					[24.806720,110.365949],
+					[24.803292,110.368137],
+					[24.800526,110.370798],
+					[24.799513,110.371270],
+					[24.799007,110.372901],
+					[24.797643,110.373244],
+					[24.796864,110.374017],
+					[24.796085,110.375304],
+					[24.794176,110.375605],
+					[24.793962,110.376999],
+					[24.795890,110.379682], 
+					[24.797643,110.382557],
+					[24.797449,110.385690],
+					[24.797449,110.388823],
+					[24.797955,110.389938],
+					[24.797994,110.391097],
+					[24.802240,110.390410]
+                ],
+                name: "十里画廊骑行",
+                type: "straight"
+            },
+            route2: {
+                color: '#e34c26',
+                points: [
+                    [24.7950, 110.4200], // 西街
+                    [24.7667, 110.4500], // 十里画廊
+                    [24.8167, 110.4833], // 遇龙河
+                    [24.7917, 110.4250]  // 漓江景区
+                ],
+                name: "骑行路线",
+                type: "bezier"
+            },
+            route3: {
+                color: '#30a952',
+                points: [
+                    [24.8167, 110.4833], // 遇龙河
+                    [24.8500, 110.4333], // 老寨山
+                    [24.8833, 110.4667]  // 兴坪古镇
+                ],
+                name: "徒步路线",
+                type: "arc"
+            }
+        };
+
+        let currentRoute = null;
+
+        // 绘制路线函数
+        function drawRoute(routeId) {
+            // 清除当前路线
+            if (currentRoute) {
+                map.removeLayer(currentRoute);
+            }
+            
+            const route = routes[routeId];
+            if (!route) return;
+            
+            let routePoints = route.points;
+            
+            // 根据路线类型处理点
+            if (route.type === "bezier") {
+                // 使用贝塞尔曲线生成平滑路径
+                routePoints = bezierCurve(route.points, 30);
+            } else if (route.type === "arc") {
+                // 使用大圆航线生成弧线
+                if (route.points.length === 2) {
+                    routePoints = greatCircle(route.points[0], route.points[1], 20);
+                }
+            }
+            
+            // 创建路线
+            currentRoute = L.polyline(routePoints, {
+                color: route.color,
+                weight: 4,
+                opacity: 0.8,
+                lineJoin: 'round'
+            }).addTo(map);
+            
+            // 调整地图视图以显示整条路线
+            map.fitBounds(currentRoute.getBounds(), { padding: [50, 50] });
+            
+            // 添加路线名称标记
+            const midPoint = routePoints[Math.floor(routePoints.length / 2)];
+            L.marker(midPoint, {
+                icon: L.divIcon({
+                    className: 'custom-div-icon',
+                    html: `<div style="background-color: ${route.color}; color: white; padding: 4px 8px; border-radius: 4px; font-size: 12px; font-weight: bold;">${route.name}</div>`,
+                    iconSize: [100, 30],
+                    iconAnchor: [50, 15]
+                })
+            }).addTo(map);
+        }
+
+        // 导航栏交互
+        document.querySelectorAll('.sidebar-item[data-route]').forEach(item => {
+            item.addEventListener('click', function() {
+                // 移除所有活动状态
+                document.querySelectorAll('.sidebar-item').forEach(i => i.classList.remove('active'));
+                // 添加当前活动状态
+                this.classList.add('active');
+                
+                const routeId = this.getAttribute('data-route');
+                drawRoute(routeId);
+            });
+        });
+
+        // 清除路线按钮
+        document.getElementById('clear-routes').addEventListener('click', function() {
+            if (currentRoute) {
+                map.removeLayer(currentRoute);
+                currentRoute = null;
+            }
+            document.querySelectorAll('.sidebar-item').forEach(i => i.classList.remove('active'));
+        });
+
+        // 默认显示第一条路线
+        document.querySelector('.sidebar-item[data-route="route1"]').click();
+		
+		
+		//---------------坐标点拾取--------------
+		// 添加坐标拾取功能
+let coordinatePicker = null;
+let isPicking = false;
+
+// 创建坐标拾取工具
+function createCoordinatePicker() {
+    if (coordinatePicker) {
+        map.removeLayer(coordinatePicker);
+    }
+    
+    // 创建半透明覆盖层用于拾取坐标
+    coordinatePicker = L.divIcon({
+        className: 'coordinate-picker',
+        html: `<div style="position: absolute; width: 100%; height: 100%; background-color: transparent; cursor: crosshair; z-index: 1001;"></div>`,
+        iconSize: [map.getSize().x, map.getSize().y],
+        iconAnchor: [0, 0]
+    });
+    
+    L.marker(map.getCenter(), { icon: coordinatePicker }).addTo(map);
+    
+    // 绑定点击事件
+    map.on('click', handleMapClick);
+}
+
+// 处理地图点击事件
+function handleMapClick(e) {
+    if (!isPicking) return;
+    
+    // 将地图像素坐标转换为经纬度
+    const latLng = e.latlng;
+    
+    // 创建坐标标记
+    const marker = L.marker(latLng, {
+        icon: L.divIcon({
+            className: 'coordinate-marker',
+            html: `<div style="background-color: red; color: white; padding: 4px 8px; border-radius: 50%; font-size: 12px; border: 2px solid white; box-shadow: 0 0 10px rgba(0,0,0,0.5);">+</div>`,
+            iconSize: [24, 24],
+            iconAnchor: [12, 12]
+        })
+    }).addTo(map);
+    
+    // 显示坐标信息
+    const popupContent = `
+        <div style="background-color: white; padding: 10px; border-radius: 8px; box-shadow: 0 2px 10px rgba(0,0,0,0.2);">
+            <div style="font-weight: bold; margin-bottom: 5px;">拾取的坐标点</div>
+            <div>纬度: ${latLng.lat.toFixed(6)}</div>
+            <div>经度: ${latLng.lng.toFixed(6)}</div>
+            <button id="copy-coords" style="margin-top: 8px; padding: 4px 10px; background-color: #1a73e8; color: white; border: none; border-radius: 4px; cursor: pointer;">复制坐标</button>
+        </div>
+    `;
+    
+    marker.bindPopup(popupContent, {
+        className: 'coordinate-popup',
+        minWidth: 200
+    }).openPopup();
+    
+    // 复制坐标到剪贴板
+    document.getElementById('copy-coords').addEventListener('click', function() {
+        const coords = `${latLng.lat.toFixed(6)},${latLng.lng.toFixed(6)}`;
+        navigator.clipboard.writeText(coords).then(() => {
+            this.textContent = '已复制';
+            setTimeout(() => {
+                this.textContent = '复制坐标';
+            }, 2000);
+        });
+    });
+    
+    // 将坐标添加到坐标列表
+    addToCoordinateList(latLng);
+}
+
+// 坐标列表容器
+let coordinateList = [];
+
+// 添加坐标到列表
+function addToCoordinateList(latLng) {
+    coordinateList.push({
+        lat: latLng.lat,
+        lng: latLng.lng,
+        id: Date.now() // 生成唯一ID
+    });
+    
+    updateCoordinateListDisplay();
+}
+
+// 获取所有坐标标记
+function getCoordinateMarkers() {
+    const markers = [];
+    map.eachLayer(function(layer) {
+        if (layer instanceof L.Marker && layer.options.icon && layer.options.icon.className === 'coordinate-marker') {
+            markers.push(layer);
+        }
+    });
+    return markers;
+}
+
+// 更新坐标列表显示
+function updateCoordinateListDisplay() {
+    let listHTML = '<div style="position: fixed; top: 20px; left: 20px; background-color: white; border-radius: 8px; box-shadow: 0 2px 10px rgba(0,0,0,0.2); padding: 10px; z-index: 1000; max-height: 70vh; overflow-y: auto; width: 300px;">';
+    listHTML += '<div style="font-weight: bold; margin-bottom: 10px; border-bottom: 1px solid #eee; padding-bottom: 5px;">坐标点列表</div>';
+    
+    if (coordinateList.length === 0) {
+        listHTML += '<div style="color: #999; padding: 10px;">暂无坐标点</div>';
+    } else {
+        const markers = getCoordinateMarkers();
+        coordinateList.forEach((coord, index) => {
+            listHTML += `<div style="display: flex; justify-content: space-between; align-items: center; padding: 5px 0; border-bottom: 1px solid #f0f0f0;">`;
+            listHTML += `<div>${index + 1}. 纬度: ${coord.lat.toFixed(6)}, 经度: ${coord.lng.toFixed(6)}</div>`;
+            listHTML += `<button style="background-color: #f44336; color: white; border: none; border-radius: 4px; padding: 2px 6px; font-size: 10px; cursor: pointer;" onclick="removeCoordinate(${index})">删除</button>`;
+            listHTML += `</div>`;
+        });
+    }
+    
+    listHTML += `</div>`;
+    
+    // 更新或创建坐标列表元素
+    if (document.getElementById('coordinate-list')) {
+        document.getElementById('coordinate-list').innerHTML = listHTML;
+    } else {
+        document.body.insertAdjacentHTML('afterbegin', listHTML);
+    }
+    
+    // 清理多余的标记
+    const markers = getCoordinateMarkers();
+    if (coordinateList.length < markers.length) {
+        for (let i = coordinateList.length; i < markers.length; i++) {
+            map.removeLayer(markers[i]);
+        }
+    }
+}
+
+// 删除坐标点
+window.removeCoordinate = function(index) {
+	console.log(1,index)
+    coordinateList.splice(index, 1);
+    updateCoordinateListDisplay();
+    
+    // 移除地图上的标记
+    const markers = getCoordinateMarkers();
+    if (markers[index]) {
+        map.removeLayer(markers[index]);
+    }
+}
+
+// 工具栏按钮 - 开启/关闭坐标拾取
+function toggleCoordinatePicker() {
+    isPicking = !isPicking;
+    
+    const pickerBtn = document.getElementById('coordinate-picker-btn');
+    if (isPicking) {
+        pickerBtn.innerHTML = '<i class="sidebar-icon">🚦</i><div class="sidebar-tooltip">正在拾取坐标</div>';
+        pickerBtn.classList.add('active');
+        createCoordinatePicker();
+    } else {
+        pickerBtn.innerHTML = '<i class="sidebar-icon">📍</i><div class="sidebar-tooltip">拾取坐标点</div>';
+        pickerBtn.classList.remove('active');
+        if (coordinatePicker) {
+            map.removeLayer(coordinatePicker);
+            coordinatePicker = null;
+        }
+        map.off('click', handleMapClick);
+    }
+}
+
+// 添加坐标拾取按钮到侧边栏
+document.querySelector('.sidebar').insertAdjacentHTML('beforeend', `
+    <div class="sidebar-item" id="coordinate-picker-btn" onclick="toggleCoordinatePicker()">
+        <i class="sidebar-icon">📍</i>
+        <div class="sidebar-tooltip">拾取坐标点</div>
+    </div>
+`);
+
+// 保存坐标点到本地存储
+function saveCoordinates() {
+    if (coordinateList.length === 0) {
+        alert('没有可保存的坐标点');
+        return;
+    }
+    
+    localStorage.setItem('handdrawnMapCoordinates', JSON.stringify(coordinateList));
+    alert('坐标点已保存');
+}
+
+// 从本地存储加载坐标点
+function loadCoordinates() {
+    const savedCoords = localStorage.getItem('handdrawnMapCoordinates');
+    if (!savedCoords) {
+        alert('没有保存的坐标点');
+        return;
+    }
+    
+    coordinateList = JSON.parse(savedCoords);
+    updateCoordinateListDisplay();
+    
+    // 在地图上显示已保存的坐标点
+    coordinateList.forEach(coord => {
+        const marker = L.marker([coord.lat, coord.lng], {
+            icon: L.divIcon({
+                className: 'coordinate-marker',
+                html: `<div style="background-color: red; color: white; padding: 4px 8px; border-radius: 50%; font-size: 12px; border: 2px solid white; box-shadow: 0 0 10px rgba(0,0,0,0.5);">+</div>`,
+                iconSize: [24, 24],
+                iconAnchor: [12, 12]
+            })
+        }).addTo(map);
+        
+        const popupContent = `
+            <div style="background-color: white; padding: 10px; border-radius: 8px; box-shadow: 0 2px 10px rgba(0,0,0,0.2);">
+                <div style="font-weight: bold; margin-bottom: 5px;">保存的坐标点</div>
+                <div>纬度: ${coord.lat.toFixed(6)}</div>
+                <div>经度: ${coord.lng.toFixed(6)}</div>
+            </div>
+        `;
+        
+        marker.bindPopup(popupContent, {
+            className: 'coordinate-popup',
+            minWidth: 200
+        });
+    });
+}
+
+// 添加保存和加载按钮
+document.querySelector('.sidebar').insertAdjacentHTML('beforeend', `
+    <div class="sidebar-item" onclick="saveCoordinates()">
+        <i class="sidebar-icon">💾</i>
+        <div class="sidebar-tooltip">保存坐标</div>
+    </div>
+    <div class="sidebar-item" onclick="loadCoordinates()">
+        <i class="sidebar-icon">📁</i>
+        <div class="sidebar-tooltip">加载坐标</div>
+    </div>
+`);
+    </script>
+</body>
+</html>
+    
